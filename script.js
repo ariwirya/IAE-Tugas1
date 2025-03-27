@@ -3,11 +3,12 @@ class BookApp {
     this.API_BOOK = "https://bukuacak-9bdcb4ef2605.herokuapp.com/api/v1/book";
     this.API_GENRE =
       "https://bukuacak-9bdcb4ef2605.herokuapp.com/api/v1/stats/genre";
-    this.allBooks = []; // Simpan semua buku di sini
-    this.filteredBooks = []; // Simpan hasil filter
+    this.allBooks = [];
+    this.filteredBooks = [];
     this.currentPage = 1;
     this.perPage = 20;
-    this.currentKeyword = ""; // Menyimpan keyword terakhir untuk menjaga konsistensi
+    this.currentKeyword = "";
+    this.currentGenre = "";
 
     this.dom = {
       searchInput: document.getElementById("searchInput"),
@@ -20,6 +21,8 @@ class BookApp {
       modalDescription: document.getElementById("modalDescription"),
       modalYear: document.getElementById("modalYear"),
       modalGenre: document.getElementById("modalGenre"),
+      searchButton: document.getElementById("searchButton"),
+      clearButton: document.getElementById("clearButton"),
     };
 
     this.init();
@@ -27,12 +30,12 @@ class BookApp {
 
   async init() {
     await this.loadGenres();
-    await this.loadInitialBooks(); // Muat semua buku di awal
+    await this.loadInitialBooks();
     this.bindEvents();
   }
 
   async loadInitialBooks() {
-    await this.loadBooks(); // Memuat semua buku tanpa filter di awal
+    await this.loadBooks();
   }
 
   async loadGenres() {
@@ -58,9 +61,9 @@ class BookApp {
   }
 
   async loadBooks({ keyword = "", genre = "" } = {}) {
-    if (keyword) {
-      this.currentKeyword = keyword; // Menyimpan keyword terakhir
-    }
+    this.currentKeyword = keyword;
+    this.currentGenre = genre;
+
     const years = [2024];
     const bookMap = new Map();
 
@@ -92,7 +95,8 @@ class BookApp {
         new Date(b.details?.published_date || 0) -
         new Date(a.details?.published_date || 0)
     );
-    this.filterBooks(this.currentKeyword); // Saring buku setiap kali loadBooks terpanggil
+
+    this.filterBooks(this.currentKeyword);
     this.currentPage = 1;
     this.render();
   }
@@ -104,7 +108,7 @@ class BookApp {
         book.title.toLowerCase().includes(keywordLower)
       );
     } else {
-      this.filteredBooks = [...this.allBooks]; // Salin semua buku jika tidak ada keyword
+      this.filteredBooks = [...this.allBooks];
     }
   }
 
@@ -116,7 +120,7 @@ class BookApp {
   renderBooks() {
     const start = (this.currentPage - 1) * this.perPage;
     const end = start + this.perPage;
-    const items = this.filteredBooks.slice(start, end); // Menggunakan filteredBooks
+    const items = this.filteredBooks.slice(start, end);
     const isGenreFiltered = this.dom.genreFilter.value !== "";
     this.dom.bookGrid.innerHTML = "";
 
@@ -146,7 +150,7 @@ class BookApp {
   }
 
   renderPagination() {
-    const totalPages = Math.ceil(this.filteredBooks.length / this.perPage); // Menggunakan filteredBooks
+    const totalPages = Math.ceil(this.filteredBooks.length / this.perPage);
     this.dom.pagination.innerHTML = "";
 
     const createBtn = (txt, cb, dis = false, act = false) => {
@@ -221,9 +225,16 @@ class BookApp {
   }
 
   bindEvents() {
-    this.dom.searchInput.addEventListener("input", () => {
+    this.dom.searchButton.addEventListener("click", () => {
       const keyword = this.dom.searchInput.value.trim();
-      this.loadBooks({ keyword }); // Hanya keyword, genre disaring di API
+      const genre = this.dom.genreFilter.value;
+      this.loadBooks({ keyword, genre });
+    });
+
+    this.dom.clearButton.addEventListener("click", () => {
+      this.dom.searchInput.value = "";
+      this.dom.genreFilter.value = "";
+      this.loadBooks();
     });
 
     this.dom.genreFilter.addEventListener("change", () => {
