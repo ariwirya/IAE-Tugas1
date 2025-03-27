@@ -3,9 +3,11 @@ class BookApp {
     this.API_BOOK = "https://bukuacak-9bdcb4ef2605.herokuapp.com/api/v1/book";
     this.API_GENRE =
       "https://bukuacak-9bdcb4ef2605.herokuapp.com/api/v1/stats/genre";
-    this.books = [];
+    this.allBooks = []; // Simpan semua buku di sini
+    this.filteredBooks = []; // Simpan hasil filter
     this.currentPage = 1;
     this.perPage = 20;
+    this.currentKeyword = ""; // Menyimpan keyword terakhir untuk menjaga konsistensi
 
     this.dom = {
       searchInput: document.getElementById("searchInput"),
@@ -25,8 +27,12 @@ class BookApp {
 
   async init() {
     await this.loadGenres();
-    await this.loadBooks();
+    await this.loadInitialBooks(); // Muat semua buku di awal
     this.bindEvents();
+  }
+
+  async loadInitialBooks() {
+    await this.loadBooks(); // Memuat semua buku tanpa filter di awal
   }
 
   async loadGenres() {
@@ -52,6 +58,9 @@ class BookApp {
   }
 
   async loadBooks({ keyword = "", genre = "" } = {}) {
+    if (keyword) {
+      this.currentKeyword = keyword; // Menyimpan keyword terakhir
+    }
     const years = [2024];
     const bookMap = new Map();
 
@@ -78,14 +87,25 @@ class BookApp {
       }
     }
 
-    this.books = Array.from(bookMap.values()).sort(
+    this.allBooks = Array.from(bookMap.values()).sort(
       (a, b) =>
         new Date(b.details?.published_date || 0) -
         new Date(a.details?.published_date || 0)
     );
-
+    this.filterBooks(this.currentKeyword); // Saring buku setiap kali loadBooks terpanggil
     this.currentPage = 1;
     this.render();
+  }
+
+  filterBooks(keyword) {
+    if (keyword) {
+      const keywordLower = keyword.toLowerCase();
+      this.filteredBooks = this.allBooks.filter((book) =>
+        book.title.toLowerCase().includes(keywordLower)
+      );
+    } else {
+      this.filteredBooks = [...this.allBooks]; // Salin semua buku jika tidak ada keyword
+    }
   }
 
   render() {
@@ -96,18 +116,18 @@ class BookApp {
   renderBooks() {
     const start = (this.currentPage - 1) * this.perPage;
     const end = start + this.perPage;
-    const items = this.books.slice(start, end);
+    const items = this.filteredBooks.slice(start, end); // Menggunakan filteredBooks
     const isGenreFiltered = this.dom.genreFilter.value !== "";
     this.dom.bookGrid.innerHTML = "";
 
     if (items.length === 0) {
       this.dom.bookGrid.innerHTML = `<p style="text-align:center; color:gray;">
-              ${
-                isGenreFiltered
-                  ? "Genre tidak ditemukan."
-                  : "Tidak ada buku ditemukan."
-              }
-            </p>`;
+            ${
+              isGenreFiltered
+                ? "Genre tidak ditemukan."
+                : "Tidak ada buku ditemukan."
+            }
+          </p>`;
       return;
     }
 
@@ -115,18 +135,18 @@ class BookApp {
       const card = document.createElement("div");
       card.className = "book-card";
       card.innerHTML = `
-              <img src="${
-                book.cover_image || "https://via.placeholder.com/200x250"
-              }" class="book-cover">
-              <div class="book-title">${book.title}</div>
-            `;
+            <img src="${
+              book.cover_image || "https://via.placeholder.com/200x250"
+            }" class="book-cover">
+            <div class="book-title">${book.title}</div>
+          `;
       card.onclick = () => this.showModal(book);
       this.dom.bookGrid.appendChild(card);
     });
   }
 
   renderPagination() {
-    const totalPages = Math.ceil(this.books.length / this.perPage);
+    const totalPages = Math.ceil(this.filteredBooks.length / this.perPage); // Menggunakan filteredBooks
     this.dom.pagination.innerHTML = "";
 
     const createBtn = (txt, cb, dis = false, act = false) => {
@@ -203,8 +223,7 @@ class BookApp {
   bindEvents() {
     this.dom.searchInput.addEventListener("input", () => {
       const keyword = this.dom.searchInput.value.trim();
-      const genre = this.dom.genreFilter.value;
-      this.loadBooks({ keyword, genre });
+      this.loadBooks({ keyword }); // Hanya keyword, genre disaring di API
     });
 
     this.dom.genreFilter.addEventListener("change", () => {
