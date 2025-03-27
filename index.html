@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Koleksi Buku (terbitan 2024)</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <div class="header">
+      <h1>Koleksi Buku (terbitan 2024)</h1>
+    </div>
+
+    <div class="search-container">
+      <input type="text" id="searchInput" placeholder="Cari buku..." />
+      <select id="genreFilter">
+        <option value="">Semua Genre</option>
+      </select>
+    </div>
+
+    <div class="books-grid" id="latestBooks"></div>
+    <div id="pagination"></div>
+
+    <div id="bookModal" class="modal">
+      <div class="modal-content">
+        <span
+          class="close-btn"
+          onclick="document.getElementById('bookModal').style.display='none'"
+          >&times;</span
+        >
+        <h2 id="modalTitle"></h2>
+        <p><strong>Penulis : </strong> <span id="modalAuthor"></span></p>
+        <p><strong>Deskripsi : </strong> <span id="modalDescription"></span></p>
+        <p><strong>Tahun Terbit : </strong> <span id="modalYear"></span></p>
+        <p><strong>Genre : </strong> <span id="modalGenre"></span></p>
+      </div>
+    </div>
+
+    <script src="js/script.js"></script>
+  </body>
+</html>
